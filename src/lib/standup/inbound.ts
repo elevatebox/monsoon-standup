@@ -139,6 +139,19 @@ async function handleText(inbound: NormalizedInbound): Promise<InboundResult> {
     return { handled: true, note: "unknown sender" };
   }
 
+  // Nothing readable (a sticker, or a photo/file with no caption): say so
+  // instead of going silent — an empty message would also break the AI call.
+  if (!inbound.payload.trim()) {
+    await reply(
+      inbound.channel,
+      inbound.from,
+      inbound.attachments.length > 0
+        ? "Got the file. Add a line about what it is or which task it belongs to, and I'll log it."
+        : "I couldn't read that message. Type your update or question and I'll take it from there."
+    );
+    return { handled: true, note: "empty payload" };
+  }
+
   // The assistant sees the person's tasks, the whole team's tasks, dev activity
   // and the team roster, then answers, records an update, or creates a task.
   const [myTasks, teamTasks, dev, users] = await Promise.all([

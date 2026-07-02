@@ -2,9 +2,12 @@ import { NextRequest, NextResponse } from "next/server";
 import { env } from "@/lib/env";
 import {
   answerCallback,
+  downloadTelegramFile,
   editMessageText,
   parseTelegramUpdate,
 } from "@/lib/transport/telegram";
+import { getTransport } from "@/lib/transport";
+import { transcribeAudio } from "@/lib/ai/gemini";
 import { handleInbound } from "@/lib/standup/inbound";
 import { buttonsForTask, parseButtonValue } from "@/lib/standup/buttons";
 import { applyButtonAction } from "@/lib/standup/actions";
@@ -12,6 +15,8 @@ import { getUserByTelegramChatId } from "@/lib/db/queries";
 
 // Telegram posts every update here. Registered once via the setup endpoint.
 export const dynamic = "force-dynamic";
+// Voice notes add a download + transcription hop before the assistant runs.
+export const maxDuration = 60;
 
 export async function POST(req: NextRequest) {
   // Reject anything not signed with our secret token.
@@ -57,6 +62,29 @@ export async function POST(req: NextRequest) {
 
   const { inbound } = parseTelegramUpdate(update);
   if (!inbound) return NextResponse.json({ ok: true });
+
+  // Voice note: transcribe it so the assistant handles it like typed text. If we
+  // can't make it out, say so rather than staying silent.
+  const voice = (update.message ?? update.edited_message)?.voice;
+  if (inbound.kind === "text" && voice?.file_id) {
+    let transcript = "";
+    try {
+      const audio = await downloadTelegramFile(voice.file_id);
+      if (audio) {
+        transcript = await transcribeAudio(audio, voice.mime_type ?? "audio/ogg");
+      }
+    } catch (e) {
+      console.error("voice transcription error:", (e as Error).message);
+    }
+    if (!transcript) {
+      await getTransport("telegram").send({
+        to: inbound.from,
+        text: "I couldn't make out that voice note. Mind typing it instead?",
+      });
+      return NextResponse.json({ ok: true });
+    }
+    inbound.payload = transcript;
+  }
 
   try {
     await handleInbound(inbound);

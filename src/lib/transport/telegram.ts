@@ -80,6 +80,29 @@ export async function editMessageText(
   }
 }
 
+// Download a file (e.g. a voice note) from Telegram as base64, via getFile to
+// resolve the short-lived download path. Null on any failure so the caller can
+// fall back to asking the person to type.
+export async function downloadTelegramFile(fileId: string): Promise<string | null> {
+  try {
+    const res = await fetch(API("getFile"), {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ file_id: fileId }),
+    });
+    const data = await res.json();
+    const path: string | undefined = data?.result?.file_path;
+    if (!data.ok || !path) return null;
+    const file = await fetch(
+      `https://api.telegram.org/file/bot${env.TELEGRAM_BOT_TOKEN}/${path}`
+    );
+    if (!file.ok) return null;
+    return Buffer.from(await file.arrayBuffer()).toString("base64");
+  } catch {
+    return null;
+  }
+}
+
 // Acknowledge a tapped inline button so the loading spinner on the user's side
 // stops. Telegram requires this within a few seconds.
 export async function answerCallback(

@@ -47,25 +47,22 @@ export async function middleware(req: NextRequest) {
     return NextResponse.next();
   }
 
-  // A teammate's personal link, /u/<token>: their login. A valid token drops
-  // into the sa_user_token cookie and lands them on the full dashboard, same
-  // as the founder. An invalid one falls through to the friendly dead-end page.
+  // A teammate's personal link, /u/<token>: their login and their own
+  // dashboard. Drop the token into the sa_user_token cookie so the shared
+  // pages (/board, /team, /tasks/new) and the APIs accept them; the page
+  // itself renders their personal view (an invalid token gets a dead end).
   if (pathname.startsWith("/u/")) {
     const token = pathname.split("/")[2] ?? "";
-    if (await isValidUserToken(token)) {
-      const url = req.nextUrl.clone();
-      url.pathname = "/dashboard";
-      url.search = "";
-      const res = NextResponse.redirect(url);
+    const res = NextResponse.next();
+    if (token) {
       res.cookies.set(USER_TOKEN_COOKIE, token, {
         httpOnly: true,
         sameSite: "lax",
         path: "/",
         maxAge: 60 * 60 * 24 * 365,
       });
-      return res;
     }
-    return NextResponse.next();
+    return res;
   }
 
   // Founder password cookie.

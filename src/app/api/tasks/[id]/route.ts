@@ -8,7 +8,7 @@ export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const denied = requireDashboardAuth(req);
+  const denied = await requireDashboardAuth(req);
   if (denied) return denied;
   const { id } = await params;
   const task = await getTaskWithAssignments(id);

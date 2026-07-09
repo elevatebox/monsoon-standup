@@ -25,8 +25,12 @@ export function isAuthed(req: NextRequest): boolean {
 }
 
 // For API route handlers: returns a 401 NextResponse if not authed, else null.
-export function requireDashboardAuth(req: NextRequest): NextResponse | null {
-  if (isAuthed(req)) return null;
+// Every teammate has the same access as the founder, so any resolved actor
+// (password cookie or valid personal-link token) passes.
+export async function requireDashboardAuth(
+  req: NextRequest
+): Promise<NextResponse | null> {
+  if (await resolveActor(req)) return null;
   return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 }
 

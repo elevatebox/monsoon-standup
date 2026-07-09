@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { AUTH_COOKIE, expectedToken } from "@/lib/auth";
+import { AUTH_COOKIE, USER_TOKEN_COOKIE, expectedToken } from "@/lib/auth";
 import { env } from "@/lib/env";
 
 export const dynamic = "force-dynamic";
@@ -21,9 +21,11 @@ export async function POST(req: NextRequest) {
   return res;
 }
 
-// DELETE -> log out.
+// DELETE -> log out. Clears both the founder cookie and a teammate's
+// personal-link cookie.
 export async function DELETE() {
   const res = NextResponse.json({ ok: true });
   res.cookies.set(AUTH_COOKIE, "", { path: "/", maxAge: 0 });
+  res.cookies.set(USER_TOKEN_COOKIE, "", { path: "/", maxAge: 0 });
   return res;
 }

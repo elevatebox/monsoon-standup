@@ -5,7 +5,7 @@ import { requireActor, requireDashboardAuth } from "@/lib/auth";
 export const dynamic = "force-dynamic";
 
 export async function GET(req: NextRequest) {
-  const denied = requireDashboardAuth(req);
+  const denied = await requireDashboardAuth(req);
   if (denied) return denied;
   const users = await listUsers();
   return NextResponse.json({ users });

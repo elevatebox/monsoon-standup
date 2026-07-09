@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { AssignmentContext, User } from "@/lib/db/types";
 import { DevActivity } from "@/lib/dev/github";
@@ -31,7 +30,7 @@ export function FounderView({
   const first = user.name.split(/\s+/)[0];
 
   return (
-    <div className="mx-auto max-w-6xl px-5 py-8">
+    <div>
       <header className="mb-6 flex items-end justify-between gap-3">
         <div>
           <p className="eyebrow mb-1">Team dashboard</p>
@@ -41,14 +40,6 @@ export function FounderView({
           <p className="mt-1 text-sm text-muted">
             Everything the team is working on, in one place.
           </p>
-          <nav className="mt-2 flex gap-3 text-sm">
-            <Link href="/board" className="text-accent hover:underline">
-              Board
-            </Link>
-            <Link href="/team" className="text-accent hover:underline">
-              Team
-            </Link>
-          </nav>
         </div>
         <div className="flex shrink-0 gap-2">
           <button

@@ -37,7 +37,7 @@ export function TeammateView({
   ];
 
   return (
-    <div className="mx-auto max-w-6xl px-5 py-8">
+    <div>
       <header className="mb-5 flex items-end justify-between gap-3">
         <div>
           <p className="eyebrow mb-1">{seesAll ? "Team board" : "Your tasks"}</p>

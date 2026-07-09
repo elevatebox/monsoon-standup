@@ -47,12 +47,19 @@ export async function middleware(req: NextRequest) {
     return NextResponse.next();
   }
 
-  // A teammate's personal link, /u/<token>: their login and their own
-  // dashboard. Drop the token into the sa_user_token cookie so the shared
-  // pages (/board, /team, /tasks/new) and the APIs accept them; the page
-  // itself renders their personal view (an invalid token gets a dead end).
+  // A teammate's personal space, /u/<token>[/board|/team|/tasks/new]: their
+  // login and their own dashboard. Drop the token into the sa_user_token
+  // cookie so the APIs accept them. The base page shows a friendly dead end
+  // for an invalid token; the deeper pages render real data, so those require
+  // a valid token outright.
   if (pathname.startsWith("/u/")) {
-    const token = pathname.split("/")[2] ?? "";
+    const [, , token = "", ...rest] = pathname.split("/");
+    if (rest.length > 0 && !(await isValidUserToken(token))) {
+      const url = req.nextUrl.clone();
+      url.pathname = "/login";
+      url.searchParams.set("next", pathname);
+      return NextResponse.redirect(url);
+    }
     const res = NextResponse.next();
     if (token) {
       res.cookies.set(USER_TOKEN_COOKIE, token, {
